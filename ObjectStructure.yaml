@@ -1,0 +1,49 @@
+#ObjectStructure.yaml
+
+
+Stock:
+    - Ticker
+    - Price
+    - 52wkhigh
+    - 52wklow
+
+Option:
+    - Ticker
+    - OptChain
+    - OptType
+    - ExpiryDate
+    - StrikePrice
+    - Delta
+    - Theta
+    - Vega
+    - Profitability
+    - IV
+
+OptionSearch:
+    - chain_symbol
+    - expiration_date
+#    - state
+    - type
+    - strike_price
+#    - chance_of_profit_long
+    - chance_of_profit_short
+#    - tradability
+    - delta
+    - theta
+    - implied_volatility
+    - gamma
+    - vega
+    - ask_price
+    - ask_size
+    - bid_price
+    - bid_size
+    - last_trade_price
+    - open_interest
+    - volume
+    - high_fill_rate_buy_price
+    - high_fill_rate_sell_price
+    - low_fill_rate_buy_price
+    - low_fill_rate_sell_price
+
+
+
