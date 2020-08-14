@@ -6,6 +6,8 @@ Stock:
     - Price
     - 52wkhigh
     - 52wklow
+    - dayhigh
+    - daylow
 
 Option:
     - Ticker
@@ -19,7 +21,7 @@ Option:
     - Profitability
     - IV
 
-OptionSearch:
+OptionSchema:
     - chain_symbol
     - expiration_date
 #    - state
@@ -33,17 +35,31 @@ OptionSearch:
     - implied_volatility
     - gamma
     - vega
-    - ask_price
-    - ask_size
-    - bid_price
-    - bid_size
-    - last_trade_price
+#    - ask_price
+#    - ask_size
+#    - bid_price
+#    - bid_size
+#    - last_trade_price
     - open_interest
     - volume
-    - high_fill_rate_buy_price
-    - high_fill_rate_sell_price
-    - low_fill_rate_buy_price
-    - low_fill_rate_sell_price
+#    - high_fill_rate_buy_price
+#    - high_fill_rate_sell_price
+#    - low_fill_rate_buy_price
+#    - low_fill_rate_sell_price
 
 
+StockFilter:
+    - Ticker
+    - Price
 
+OptionFilter:
+    - delta
+    - expiration_date
+    - DTE
+    - volume
+    - chance_of_profit_long
+    - chance_of_profit_short
+    - implied_volatility
+    - strike_price
+    - type
+    - chain_symbol

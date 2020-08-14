@@ -1,0 +1,27 @@
+[
+  {
+    "chain_symbol": "TSLA",
+    "expiration_date": "2020-08-14",
+    "rhs_tradability": "untradable",
+    "state": "active",
+    "strike_price": "1575.0000",
+    "type": "call",
+    "ask_price": "53.350000",
+    "ask_size": "1",
+    "bid_price": "48.300000",
+    "bid_size": "1",
+    "high_price": "84.330000",
+    "last_trade_price": "51.500000",
+    "last_trade_size": "1",
+    "low_price": "26.800000",
+    "mark_price": "50.825000",
+    "open_interest": "1255",
+    "volume": "1692",
+    "chance_of_profit_long": "0.455933",
+    "chance_of_profit_short": "0.544067",
+    "delta": "0.825572",
+    "gamma": "0.005077",
+    "implied_volatility": "0.597137",
+    "theta": "-6.521860"
+  }
+]
