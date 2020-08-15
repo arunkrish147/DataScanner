@@ -94,7 +94,7 @@ def write_options_to_file(expiry_date):
     print('Options written to file!')
 
 
-def scan_options(expiry_date="2020-08-21", iv_from=0.01, iv_to=10.0):
+def scan_options(expiry_date="2020-08-21", iv_from=0.01, iv_to=100.0):
     with open('./options_by_expiration.json', 'r') as infile:
         dic_test = json.load(infile)
 
@@ -147,9 +147,9 @@ def scan_options(expiry_date="2020-08-21", iv_from=0.01, iv_to=10.0):
     pd.set_option("display.max_colwidth", None)
     pd.options.display.float_format = "{:.2f}".format
 
-    print(" ")
-    print(" OPTIONS SCAN RESULTS")
-    print("---------------------")
+    print("---------------------------------------------")
+    print("|  Options Scan Results for IV : " + str(iv_from) + " - " + str(iv_to) + "  |")
+    print("---------------------------------------------")
 
     df_option_chain_sorted = df_option_chain_view.nlargest(100, 'IV')
     print(df_option_chain_sorted.sort_values(by=['chain_symbol']))
