@@ -27,14 +27,14 @@ OptionSchema:
 #    - state
     - type
     - strike_price
-#    - chance_of_profit_long
+    - chance_of_profit_long
     - chance_of_profit_short
 #    - tradability
     - delta
     - theta
     - implied_volatility
-    - gamma
-    - vega
+#    - gamma
+#    - vega
 #    - ask_price
 #    - ask_size
 #    - bid_price
