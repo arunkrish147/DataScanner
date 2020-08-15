@@ -12,7 +12,8 @@ import numpy as np
 company_list_csv = "./companylist.csv"
 rh_stocks_json = "./rh_stocks.json"
 rh_options_json = "./rh_options.json"
-
+ObjectStructure_yaml = "./ObjectStructure.yaml"
+rh_options_expiration_json = "./options_by_expiration.json"
 
 def authenticate():
     with open(r'./AccountConfig.yaml') as file:
@@ -32,13 +33,14 @@ def find_options_by_profitability(ticker="AAPL", profitFloor=0.00, profitCeil=1.
     return pd.DataFrame(option_query)
 
 
-def print_option_info(df_opt_query=None):
-    with open(r'./ObjectStructure.yaml') as file:
+def get_option_schema(df_opt_query=None):
+    with open(ObjectStructure_yaml, 'r') as file:
         option_search_dict = yaml.full_load(file)
-    print_list = option_search_dict['OptionSchema']
-    pd.set_option("max_columns", None)
-    print(df_opt_query[print_list])
-    print(df_opt_query.size)
+    return option_search_dict['OptionSchema']  # returns list
+
+    # pd.set_option("max_columns", None)
+    # print(df_opt_query[print_list])
+    # print(df_opt_query.size)
 
     # get_fundamentals()
     # get_popularity()
@@ -84,10 +86,29 @@ def scan_options(expiry_date, iv):
     with open(rh_options_json, 'r') as infile:
         options_ticker_list = json.load(infile)
 
-    options_ticker_list = ['AAPL', 'TSLA']
-    for ti in options_ticker_list:
-        try:
-            option_chain = rh.options.find_options_by_expiration(ti,expirationDate=expiry_date)
+    df_option_chain = pd.DataFrame(rh.options.find_options_by_expiration(options_ticker_list,
+                                                                         expirationDate=expiry_date)
+                                   )
+    df_option_chain.to_json(r'./options_by_expiration.json')
+
+    #typecasting
+    df_option_chain["implied_volatility"] = pd.to_numeric(df_option_chain["implied_volatility"], downcast="float")
+
+    # filters
+    df_option_chain_filtered = df_option_chain.loc[
+        (df_option_chain['state'] == "active") &
+        (df_option_chain['tradability'] == "tradable") &
+        (df_option_chain['expiration_date'] == expiry_date) &
+        (df_option_chain['implied_volatility'] >= float(iv))
+    ]
+
+    df_option_chain_view = df_option_chain_filtered[get_option_schema()]
+    #df_option_chain_view.sort_values(by=['implied_volatility'], inplace=True, ascending=False)
+
+    pd.set_option("max_columns", None)
+    print(df_option_chain_view.nlargest(100, 'implied_volatility'))
+
+
 
 
 def scanner_main():
@@ -96,7 +117,7 @@ def scanner_main():
     # master_stock_list_refresh()  # Generates RH stock ticker list and saves to rh_stocks json file
     # master_option_list_refresh() # Generates RH option ticker list and saves to rh_options json file
 
-    scan_options(expiry='20200821', iv=0.6)
+    scan_options(expiry_date='2020-08-21', iv=0.6)
 
 
 if __name__ == "__main__":
