@@ -27,21 +27,21 @@ OptionSchema:
 #    - state
     - type
     - strike_price
+    - implied_volatility
     - chance_of_profit_long
     - chance_of_profit_short
 #    - tradability
     - delta
     - theta
-    - implied_volatility
-#    - gamma
-#    - vega
-#    - ask_price
-#    - ask_size
-#    - bid_price
-#    - bid_size
+#   - gamma
+#   - vega
+    - ask_price
+    - ask_size
+    - bid_price
+    - bid_size
 #    - last_trade_price
     - open_interest
-    - volume
+#    - volume
 #    - high_fill_rate_buy_price
 #    - high_fill_rate_sell_price
 #    - low_fill_rate_buy_price
