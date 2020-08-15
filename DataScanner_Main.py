@@ -94,7 +94,7 @@ def write_options_to_file(expiry_date):
     print('Options written to file!')
 
 
-def scan_options(expiry_date, iv):
+def scan_options(expiry_date="2020-08-21", iv_from=0.01, iv_to=10.0):
     with open('./options_by_expiration.json', 'r') as infile:
         dic_test = json.load(infile)
 
@@ -116,19 +116,22 @@ def scan_options(expiry_date, iv):
     main_df["theta"] = pd.to_numeric(main_df["theta"], downcast="float")
 
     main_df["ask_price"] = pd.to_numeric(main_df["ask_price"], downcast="float")
-    main_df["ask_size"] = pd.to_numeric(main_df["ask_size"], downcast="float")
+    main_df["ask_size"] = pd.to_numeric(main_df["ask_size"], downcast="integer")
     main_df["bid_price"] = pd.to_numeric(main_df["bid_price"], downcast="float")
-    main_df["bid_size"] = pd.to_numeric(main_df["bid_size"], downcast="float")
+    main_df["bid_size"] = pd.to_numeric(main_df["bid_size"], downcast="integer")
 
     # Row Filters
     df_option_chain_filtered = main_df.loc[
         (main_df['state'] == "active") &
         (main_df['tradability'] == "tradable") &
         (main_df['expiration_date'] == expiry_date) &
-        (main_df['implied_volatility'] >= float(iv)) &
+        (main_df['implied_volatility'] >= float(iv_from)) &
+        (main_df['implied_volatility'] <= float(iv_to)) &
         (main_df['volume'] > 999) &
         (main_df['bid_size'] > 9) &
-        (main_df['ask_size'] > 9)
+        (main_df['ask_size'] > 9) &
+        (main_df['bid_price'] > 0.01) &
+        (main_df['ask_price'] > 0.01)
         ]
 
     df_option_chain_view = df_option_chain_filtered[get_option_schema()]
@@ -148,7 +151,9 @@ def scan_options(expiry_date, iv):
     print(" OPTIONS SCAN RESULTS")
     print("---------------------")
 
-    print(df_option_chain_view.nlargest(100, 'IV'))
+    df_option_chain_sorted = df_option_chain_view.nlargest(100, 'IV')
+    print(df_option_chain_sorted.sort_values(by=['chain_symbol']))
+
 
 
 def scanner_main():
@@ -160,7 +165,7 @@ def scanner_main():
     # write_options_to_file(expiry_date='2020-08-21')   # Generates RH option data based on RH options ticker list
     #                                                   # and writes the data to options_by_expiration file
 
-    scan_options(expiry_date='2020-08-21', iv=0.7)
+    scan_options(expiry_date='2020-08-21', iv_from=0.3, iv_to=0.4)
 
 
 if __name__ == "__main__":
