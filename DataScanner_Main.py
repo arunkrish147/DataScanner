@@ -7,7 +7,7 @@ import json
 import warnings
 import datetime as dt
 import pandas as pd
-import numpy as np
+import psycopg2
 
 company_list_csv = "./companylist.csv"
 rh_stocks_json = "./rh_stocks.json"
@@ -250,18 +250,33 @@ def get_front_expiry_week():
     return friday
 
 
+def fetch_from_db():
+    conn = psycopg2.connect(
+        host="localhost",
+        database="stock_mart",
+        user="datascanner",
+        password="1234")
+
+    curr = conn.cursor()
+    curr.execute('select * from stock_fundamentals')
+    print(curr.fetchone())
+
+
+
 def scanner_main():
     front_expiry = get_front_expiry_week()
 
-    authenticate()
+    # authenticate()
     # master_stock_list_refresh()  # Generates RH stock ticker list and saves to rh_stocks json file
     # master_option_list_re#fresh() # Generates RH option ticker list and saves to rh_options json file
-    write_options_to_file(expiry_date=front_expiry.strftime("%Y-%m-%d"))  # Generates RH option data based on RH options ticker list
+    # write_options_to_file(expiry_date=front_expiry.strftime("%Y-%m-%d"))  # Generates RH option data based on RH options ticker list
     #                                                 # and writes the data to options_by_expiration file
 
-    print("\nScanning Options for " + front_expiry.strftime("%b %d, %Y") + " Expiry\n")
-    scan_options(expiry_date=front_expiry.strftime("%Y-%m-%d"), iv_from=0.4, iv_to=100.0)
+    # print("\nScanning Options for " + front_expiry.strftime("%b %d, %Y") + " Expiry\n")
+    # scan_options(expiry_date=front_expiry.strftime("%Y-%m-%d"), iv_from=0.4, iv_to=100.0)
 
+    print("DB Connection")
+    fetch_from_db()
 
 if __name__ == "__main__":
     scanner_main()
