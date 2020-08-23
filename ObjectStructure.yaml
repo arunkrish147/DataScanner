@@ -23,6 +23,7 @@ Option:
 
 OptionSchema:
     - chain_symbol
+    - quote
     - expiration_date
 #    - state
     - type

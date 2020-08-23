@@ -5,7 +5,7 @@ import robin_stocks as rh
 import yaml as yaml
 import json
 import warnings
-
+import datetime as dt
 import pandas as pd
 import numpy as np
 
@@ -15,6 +15,7 @@ rh_options_json = "./rh_options.json"
 rh_options_shortlist_json = "./rh_options_shortlist.json"
 ObjectStructure_yaml = "./ObjectStructure.yaml"
 rh_options_expiration_json = "./options_by_expiration.json"
+Auth_Flag = False
 
 
 def authenticate():
@@ -34,12 +35,19 @@ def authenticate():
         print(" ~-~-~-~-~-~-~-~-~  ")
         exit()
 
+    global Auth_Flag
+    Auth_Flag = True
+
 
 def find_options_by_profitability(ticker="AAPL", profitFloor=0.00, profitCeil=1.00):
-    option_query = rh.find_options_by_specific_profitability(ticker, strikePrice="1800", optionType="call",
-                                                             typeProfit="chance_of_profit_short", profitFloor=0.8,
-                                                             profitCeiling=1.0)
-    return pd.DataFrame(option_query)
+    if Auth_Flag:
+        option_query = rh.find_options_by_specific_profitability(ticker, strikePrice="1800", optionType="call",
+                                                                 typeProfit="chance_of_profit_short", profitFloor=0.8,
+                                                                 profitCeiling=1.0)
+        return pd.DataFrame(option_query)
+    else:
+        print("Authentication missing")
+        exit()
 
 
 def get_option_schema(df_opt_query=None):
@@ -64,11 +72,28 @@ def get_option_schema(df_opt_query=None):
 def master_stock_list_refresh():
     warnings.filterwarnings("ignore")
     df_tickers = pd.read_csv(company_list_csv)[["Symbol"]]  # double square brackets returns DF instead of Series
-    rh_list = rh.stocks.get_instruments_by_symbols(df_tickers["Symbol"].tolist(), info='symbol')
+    if Auth_Flag:
+        rh_list = rh.stocks.get_instruments_by_symbols(df_tickers["Symbol"].tolist(), info='symbol')
+    else:
+        print("Authentication missing")
+        exit()
 
     with open(rh_stocks_json, 'w') as outfile:
         json.dump(rh_list, outfile)
     print("RH Ticker List updated!")
+
+# Not used as of now
+def get_latest_price(ticker_list):
+    return_list = []
+    if Auth_Flag:
+        for ticker_item in ticker_list:
+            rh_quote = rh.stocks.get_latest_price(ticker_item)
+            return_list.append(str(rh_quote))
+    else:
+        print("Authentication missing")
+        exit()
+
+    return return_list
 
 
 def master_option_list_refresh():
@@ -77,13 +102,18 @@ def master_option_list_refresh():
 
     # stock_tickers_list = ['AAPL', 'INPX']
     option_tickers_list = []
-    for ti in stock_tickers_list:
-        try:
-            lis = rh.options.find_options_by_expiration(ti, "2020-08-15")
-            option_tickers_list.append(str(ti))
 
-        except:
-            print("Passing : " + str(ti))
+    if Auth_Flag:
+        for ti in stock_tickers_list:
+            try:
+                lis = rh.options.find_options_by_expiration(ti, "2020-08-15")
+                option_tickers_list.append(str(ti))
+
+            except:
+                print("Passing : " + str(ti))
+    else:
+        print("Authentication missing")
+        exit()
 
     with open(rh_options_json, 'w') as outfile:
         json.dump(option_tickers_list, outfile)
@@ -95,37 +125,47 @@ def write_options_to_file(expiry_date):
     with open(rh_options_json, 'r') as infile:
         options_ticker_list = json.load(infile)
 
-    Option_Extract_list = []
-    Option_Skip_list = []
-    # options_ticker_list = ["F", "ZYXW", "MU"] #to be used for testing one file
-    df_option_chain = pd.DataFrame()
-    options_ticker_list.sort()
-    for options_ticker in options_ticker_list:
-        try:
-            df_option_chain_temp = pd.DataFrame(rh.options.find_options_by_expiration(options_ticker,
-                                                                                      expirationDate=expiry_date)
-                                                )
+    option_extract_list = []
+    option_skip_list = []
 
-            if df_option_chain.empty:
-                df_option_chain = df_option_chain_temp
-            else:
-                df_option_chain = pd.concat([df_option_chain, df_option_chain_temp], ignore_index=True, sort=False)
-            Option_Extract_list.append(options_ticker)
-            print("Extracted : " + str(options_ticker))
-        except:
-            Option_Skip_list.append(options_ticker)
-            print("Skipped : " + str(options_ticker))
+    # options_ticker_list = ["BA", "ZYXW", "BAC"]  # to be used for testing one file
+    options_ticker_list.sort()
+
+    df_option_chain = pd.DataFrame()
+
+    if Auth_Flag:
+        for options_ticker in options_ticker_list:
+            try:
+                print("Now Extracting : " + str(options_ticker))
+                df_option_chain_temp = pd.DataFrame(rh.options.find_options_by_expiration(options_ticker,
+                                                                                          expirationDate=expiry_date)
+                                                    )
+                quote_item = rh.stocks.get_latest_price(options_ticker)[0]  # Get price value from list
+                df_option_chain_temp["quote"] = quote_item
+
+                if df_option_chain.empty:
+                    df_option_chain = df_option_chain_temp
+                else:
+                    df_option_chain = pd.concat([df_option_chain, df_option_chain_temp], ignore_index=True, sort=False)
+                option_extract_list.append(options_ticker)
+                print("Extracted : " + str(options_ticker))
+            except:
+                option_skip_list.append(options_ticker)
+                print("Skipped : " + str(options_ticker))
+    else:
+        print("Authentication missing")
+        exit()
 
     df_option_chain.to_json(r'./options_by_expiration.json')
     print('Options written to file!')
 
     print("Extract List : ")
-    print(*Option_Extract_list)
+    print(*option_extract_list)
     print("Skip List : ")
-    print(*Option_Skip_list)
+    print(*option_skip_list)
 
 
-def scan_options(expiry_date="2020-08-21", iv_from=0.01, iv_to=100.0):
+def scan_options(expiry_date, iv_from=0.01, iv_to=100.0):
     with open('./options_by_expiration.json', 'r') as infile:
         dic_test = json.load(infile)
 
@@ -135,11 +175,11 @@ def scan_options(expiry_date="2020-08-21", iv_from=0.01, iv_to=100.0):
         main_df = pd.concat([main_df, df_temp], axis=1).reindex(df_temp.index)
 
     # typecasting
-
     main_df["volume"] = pd.to_numeric(main_df["volume"], downcast="integer")
     main_df["open_interest"] = pd.to_numeric(main_df["open_interest"], downcast="integer")
 
     main_df["strike_price"] = pd.to_numeric(main_df["strike_price"], downcast="float")
+    main_df["quote"] = pd.to_numeric(main_df["quote"], downcast="float")
     main_df["chance_of_profit_long"] = pd.to_numeric(main_df["chance_of_profit_long"], downcast="float")
     main_df["chance_of_profit_short"] = pd.to_numeric(main_df["chance_of_profit_short"], downcast="float")
     main_df["implied_volatility"] = pd.to_numeric(main_df["implied_volatility"], downcast="float")
@@ -166,12 +206,12 @@ def scan_options(expiry_date="2020-08-21", iv_from=0.01, iv_to=100.0):
         (main_df['ask_price'] > 0.01)
         ]
 
+    # Filter columns
     df_option_chain_view = df_option_chain_filtered[get_option_schema()]
-    # df_option_chain_view = main_df[get_option_schema()]
 
-    # rename columns
+    # Rename Columns
     df_option_chain_view = df_option_chain_view.rename(
-        columns={"chance_of_profit_long": "Buy Profit%", "chance_of_profit_short": "Sell Profit%"})
+        columns={"chance_of_profit_long": "Long Profit%", "chance_of_profit_short": "Short Profit%"})
 
     pd.set_option("display.max_columns", None)
     pd.set_option("display.max_rows", None)
@@ -184,7 +224,8 @@ def scan_options(expiry_date="2020-08-21", iv_from=0.01, iv_to=100.0):
     print("*---------------------------------------------*")
 
     df_option_chain_sorted = df_option_chain_view.nlargest(100, 'implied_volatility')
-    print(df_option_chain_sorted.sort_values(by=['implied_volatility', 'chain_symbol'], ascending=False))
+    print(df_option_chain_sorted.sort_values(by=['implied_volatility', 'chain_symbol'], ascending=False).to_string(
+        index=False))
     # print(df_option_chain_view)
 
     # Shortlist
@@ -195,23 +236,31 @@ def scan_options(expiry_date="2020-08-21", iv_from=0.01, iv_to=100.0):
 
     df_short_list_view = df_option_chain_view[df_option_chain_view.chain_symbol.isin(list(df_sp500_plus.chain_symbol))]
     df_short_list_sorted = df_short_list_view.nlargest(100, 'implied_volatility')
-    print("\n\n")
+    print("")
     print("*--------------------------------------------------------*")
     print("|  SHORT LIST Options Scan Results for IV : " + str(iv_from) + " - " + str(iv_to) + "  |")
     print("*--------------------------------------------------------*")
-    print(df_short_list_sorted.sort_values(by=['implied_volatility', 'chain_symbol'], ascending=False))
+    print(df_short_list_sorted.sort_values(by=['implied_volatility', 'chain_symbol'], ascending=False).to_string(
+        index=False))
+
+
+def get_front_expiry_week():
+    today = dt.date.today()
+    friday = today + dt.timedelta((4 - today.weekday()) % 7)
+    return friday
 
 
 def scanner_main():
-    authenticate()
+    front_expiry = get_front_expiry_week()
 
+    authenticate()
     # master_stock_list_refresh()  # Generates RH stock ticker list and saves to rh_stocks json file
     # master_option_list_re#fresh() # Generates RH option ticker list and saves to rh_options json file
-
-    # write_options_to_file(expiry_date='2020-08-28')  # Generates RH option data based on RH options ticker list
+    write_options_to_file(expiry_date=front_expiry.strftime("%Y-%m-%d"))  # Generates RH option data based on RH options ticker list
     #                                                 # and writes the data to options_by_expiration file
 
-    scan_options(expiry_date='2020-08-28', iv_from=0.4, iv_to=100.0)
+    print("\nScanning Options for " + front_expiry.strftime("%b %d, %Y") + " Expiry\n")
+    scan_options(expiry_date=front_expiry.strftime("%Y-%m-%d"), iv_from=0.4, iv_to=100.0)
 
 
 if __name__ == "__main__":
